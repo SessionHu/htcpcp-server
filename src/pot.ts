@@ -70,7 +70,7 @@ export class TeaPot extends _Pot {
     }
     this.status = 'brewing';
     this.additions = additions;
-    return this.path + ': Staring brewing...';
+    return this.path + ': Starting brewing...';
   }
   stop(mediatype: string): string {
     if (mediatype !== 'message/teapot') {
@@ -91,7 +91,7 @@ export class CoffeePot extends _Pot {
     }
     this.status = 'brewing';
     this.additions = additions;
-    return this.path + ': Staring brewing...';
+    return this.path + ': Starting brewing...';
   }
   stop(mediatype: string): string {
     if (mediatype !== 'message/coffeepot'
