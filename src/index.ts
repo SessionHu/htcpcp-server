@@ -62,17 +62,53 @@ function handleBrew(path: string, headers: Map<string, string>, body: Buffer, re
   resp.writeBodyEnd(payload);
 }
 
+function handleGet(path: string, headers: Map<string, string>, resp: httpserver.HttpResponse) {
+  let payloadstr: string;
+  let status = 200;
+  if (path === '/') {
+    payloadstr = pots.map(p => p.info()).join('\n');
+  } else {
+    const tpot = pots.find(p => p.path === path);
+    if (!tpot) {
+      status = 404;
+      payloadstr = 'Sorry, no pot found for '+ path;
+    } else {
+      payloadstr = tpot.info();
+    }
+  }
+  // send
+  const payload = Buffer.from(payloadstr + '\n');
+  resp.writeStatusLine(status);
+  resp.setHeader('connection', 'close');
+  resp.setHeader('content-type', 'text/plain');
+  resp.setHeader('content-length', payload.length.toString());
+  resp.writeHeaders();
+  resp.writeBodyEnd(payload);
+}
+
 const server = httpserver.createServer((reql, headers, body, resp) => {
   const path = new URL((reql.requestUri[0] === '/' ? 'coffee:' : '') + reql.requestUri).pathname;
   if (reql.method === 'BREW' || reql.method === 'POST') {
     handleBrew(path, headers, body, resp);
-  } else {
-    resp.writeStatusLine(200);
+  } else if (reql.method === 'GET') {
+    handleGet(path, headers, resp);
+  } else if (reql.method === 'PROPFIND') {
+    const payload = Buffer.from('Sorry, WebDAV has not been implemented yet.\n');
+    resp.writeStatusLine(501);
     resp.setHeader('connection', 'close');
     resp.setHeader('content-type', 'text/plain');
-    resp.setHeader('content-length', '15');
+    resp.setHeader('content-length', payload.length.toString());
     resp.writeHeaders();
-    resp.writeBodyEnd('Hello, HTCPCP!\n');
+    resp.writeBodyEnd(payload);
+  } else {
+    const payload = Buffer.from('Method not allowed\n');
+    resp.writeStatusLine(405);
+    resp.setHeader('allow', 'BREW, POST, GET');
+    resp.setHeader('connection', 'close');
+    resp.setHeader('content-type', 'text/plain');
+    resp.setHeader('content-length', payload.length.toString());
+    resp.writeHeaders();
+    resp.writeBodyEnd(payload);
   }
 });
 
