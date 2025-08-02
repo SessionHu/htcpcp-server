@@ -6,7 +6,7 @@ const pots = new Array<pot.Pot>;
 pots.push(new pot.CoffeePot('/pot-0'));
 pots.push(new pot.TeaPot('/pot-1'));
 
-function handleBrew(path: string, headers: Map<string, string>, body: Buffer, resp: httpserver.HttpResponse) {
+function handleBrew(path: string, headers: Map<string, string>, body: Buffer | undefined, resp: httpserver.HttpResponse) {
   // check content-type header
   const contentType = headers.get('content-type');
   if (!contentType || (
@@ -39,7 +39,7 @@ function handleBrew(path: string, headers: Map<string, string>, body: Buffer, re
     payloadstr = 'Sorr, no pot found for '+ path;
   } else try {
     const additions = headers.get('accept-additions')?.split(/,\s*/) || [];
-    const command = body.toString('utf8').trim();
+    const command = body?.toString('utf8').trim();
     if (command === 'start') {
       payloadstr = tpot.start(contentType, additions);
     } else if (command === 'stop') {

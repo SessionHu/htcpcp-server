@@ -145,6 +145,6 @@ export class HttpResponse {
   }
 }
 
-export const createServer = (onconn: (reql: httptext.RequestLine, headers: Map<string, string>, body: Buffer, resp: HttpResponse) => void) => {
+export const createServer = (onconn: (reql: httptext.RequestLine, headers: Map<string, string>, body: Buffer | undefined, resp: HttpResponse) => void) => {
   return new HttpServer().on('conn', onconn);
 }
