@@ -22,7 +22,6 @@ function handleBrew(path: string, headers: Map<string, string>, body: Buffer | u
       'pot MUST be "message/teapot" or "message/coffeepot".\n'
     );
     resp.writeStatusLine(415);
-    resp.setHeader('connection', 'close');
     resp.setHeader('content-type', 'text/plain');
     resp.setHeader('content-length', payload.length.toString());
     resp.writeHeaders();
@@ -55,7 +54,6 @@ function handleBrew(path: string, headers: Map<string, string>, body: Buffer | u
   // send
   const payload = Buffer.from(payloadstr + '\n');
   resp.writeStatusLine(status);
-  resp.setHeader('connection', 'close');
   resp.setHeader('content-type', 'text/plain');
   resp.setHeader('content-length', payload.length.toString());
   resp.writeHeaders();
@@ -79,7 +77,6 @@ function handleGet(path: string, headers: Map<string, string>, resp: httpserver.
   // send
   const payload = Buffer.from(payloadstr + '\n');
   resp.writeStatusLine(status);
-  resp.setHeader('connection', 'close');
   resp.setHeader('content-type', 'text/plain');
   resp.setHeader('content-length', payload.length.toString());
   resp.writeHeaders();
@@ -95,7 +92,6 @@ const server = httpserver.createServer((reql, headers, body, resp) => {
   } else if (reql.method === 'PROPFIND') {
     const payload = Buffer.from('Sorry, WebDAV has not been implemented yet.\n');
     resp.writeStatusLine(501);
-    resp.setHeader('connection', 'close');
     resp.setHeader('content-type', 'text/plain');
     resp.setHeader('content-length', payload.length.toString());
     resp.writeHeaders();
@@ -104,7 +100,6 @@ const server = httpserver.createServer((reql, headers, body, resp) => {
     const payload = Buffer.from('Method not allowed\n');
     resp.writeStatusLine(405);
     resp.setHeader('allow', 'BREW, POST, GET');
-    resp.setHeader('connection', 'close');
     resp.setHeader('content-type', 'text/plain');
     resp.setHeader('content-length', payload.length.toString());
     resp.writeHeaders();

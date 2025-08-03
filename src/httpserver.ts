@@ -9,7 +9,6 @@ const onconnection = async (s: net.Socket, that: HttpServer) => {
 
   s.on('error', (err) => {
     console.error('An error occurred:', err);
-    // 构造一个 400 错误响应
     const body = Buffer.from((err as Error).stack || String(err));
     if (!s.writableEnded) {
       s.write(`HTTP/1.1 400 Bad Request\ncontent-length: ${body.length}\n\n`);
@@ -18,53 +17,58 @@ const onconnection = async (s: net.Socket, that: HttpServer) => {
     }
   });
 
-
   let rawData: Buffer;
-  let requestLine: httptext.RequestLine;
-  let headers: Map<string, string>;
-  let body: Buffer;
 
-  // 监听 'data' 事件来获取所有数据
   s.on('data', function ondata(chunk) {
     try {
       rawData = rawData ? Buffer.concat([rawData, chunk]) : chunk;
 
-      // 找到请求头和 body 的分隔符，也就是 CRLF CRLF
-      const headersEndIndex = rawData.indexOf('\r\n\r\n');
-      if (headersEndIndex !== -1 && !headers) {
-        // 如果找到了分隔符，说明请求头已经完整了
-        const headersSection = rawData.subarray(0, headersEndIndex).toString();
+      while (true) {
+        let requestLine: httptext.RequestLine;
+        let headers: Map<string, string>;
+        let body: Buffer;
+
+        // 寻找请求头结束标记
+        const headersEndIndex = rawData.indexOf('\r\n\r\n');
+        if (headersEndIndex === -1) break;
 
         // 解析请求头
-        const tempheaders = new Array<[string, string]>;
+        const headersSection = rawData.subarray(0, headersEndIndex).toString();
+        const tempheaders = new Array<[string, string]>();
         const lines = headersSection.split(/\r?\n/);
         requestLine = httptext.parseRequestLine(lines[0]);
         for (let i = 1; i < lines.length; i++) {
           const line = lines[i];
-          if (line.length === 0) continue; // 忽略空行
           if (httptext.LWS_START_REGEX.test(line)) {
             const last = tempheaders.pop();
             if (!last) throw new Error('Unexpected fold in headers');
             last[1] += httptext.parseMessageHeaderFold(line);
             tempheaders.push(last);
-          } else tempheaders.push(httptext.parseMessageHeaderStart(line));
+          } else {
+            tempheaders.push(httptext.parseMessageHeaderStart(line));
+          }
         }
         headers = new Map(tempheaders);
-      }
-      if (headers) {
-        // 根据 Content-Length 头部来判断 body 的长度
-        const bodySection = rawData.subarray(headersEndIndex + 4);
+
+        // 根据 Content-Length 判断请求体长度
         const contentLengthStr = headers.get('content-length');
-        const contentLength = contentLengthStr ? parseInt(contentLengthStr) : 0;
+        const contentLength = contentLengthStr ? parseInt(contentLengthStr, 10) : 0;
         if (isNaN(contentLength)) throw new Error('Invalid Content-Length header');
-        if (contentLength > 0 && bodySection.length >= contentLength) {
-          body = bodySection.subarray(0, contentLength);
-          s.removeListener('data', ondata);
-          that.emit('conn', requestLine, headers, body, new HttpResponse(s));
-        } else if (contentLength === 0) {
-          // 如果没有 body 或者 Content-Length 是 0，直接处理
-          that.emit('conn', requestLine, headers, body, new HttpResponse(s));
-        }
+
+        const requestTotalLength = headersEndIndex + 4 + contentLength;
+
+        // 检查整个请求是否已完整接收
+        if (rawData.length < requestTotalLength) break;
+        body = rawData.subarray(headersEndIndex + 4, requestTotalLength);
+        that.emit('conn', requestLine, headers, body, new HttpResponse(s));
+
+        // 切掉已经处理完的请求数据留下后面的部分
+        rawData = rawData.subarray(requestTotalLength);
+
+        // 如果 rawData 被切空了就没必要继续循环了
+        if (rawData.length === 0) break;
+
+        // 继续下一次 while 循环处理缓冲区里可能存在的下一个请求
       }
     } catch (e) {
       s.emit('error', e);
@@ -74,20 +78,39 @@ const onconnection = async (s: net.Socket, that: HttpServer) => {
   s.on('end', () => {
     console.log('Client disconnected.');
   });
+};
+
+interface HttpServerEvents {
+  'conn': (reql: httptext.RequestLine, headers: Map<string, string>, body: Buffer, resp: HttpResponse) => void;
 }
+
 
 class HttpServer extends EventEmitter {
   #sserver = net.createServer();
+
   constructor() {
     super();
-    this.#sserver.on('connection', (s) => {
-      onconnection(s, this);
+    this.#sserver.on('connection', (socket) => {
+      onconnection(socket, this);
     });
   }
-  listen(port: number, cb: () => void) {
+
+  public listen(port: number, cb?: () => void): this {
     this.#sserver.listen(port, cb);
+    return this;
   }
-};
+
+  public on<T extends keyof HttpServerEvents>(event: T, listener: HttpServerEvents[T]): this;
+  public on(event: string, listener: (...args: any[]) => void): this {
+    return super.on(event, listener);
+  }
+
+  public emit<T extends keyof HttpServerEvents>(event: T, ...args: Parameters<HttpServerEvents[T]>): boolean;
+  public emit(event: string, ...args: any[]): boolean {
+    return super.emit(event, ...args);
+  }
+}
+
 
 export class HttpResponse {
   readonly #s: net.Socket;
