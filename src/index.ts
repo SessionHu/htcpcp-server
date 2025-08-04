@@ -1,10 +1,10 @@
 import * as httpserver from './httpserver';
 import * as pot from './pot';
 
-const pots = new Array<pot.Pot>;
+const pots = new pot.PotsManager;
 
-pots.push(new pot.CoffeePot('/pot-0'));
-pots.push(new pot.TeaPot('/pot-1'));
+pots.add(new pot.CoffeePot('/pot-0'));
+pots.add(new pot.TeaPot('/pot-1'));
 
 function handleBrew(path: string, headers: Map<string, string>, body: Buffer | undefined, resp: httpserver.HttpResponse) {
   // check content-type header
@@ -31,7 +31,7 @@ function handleBrew(path: string, headers: Map<string, string>, body: Buffer | u
   let payloadstr: string;
   let status = 200;
   // get pot
-  const tpot = pots.find(p => p.path === path);
+  const tpot = pots.get(path);
   if (!tpot) {
     status = 404;
     // ps: the `Sorr` is not typo
@@ -40,7 +40,7 @@ function handleBrew(path: string, headers: Map<string, string>, body: Buffer | u
     const additions = headers.get('accept-additions')?.split(/,\s*/) || [];
     const command = body?.toString('utf8').trim();
     if (command === 'start') {
-      payloadstr = tpot.start(contentType, additions);
+      payloadstr = tpot.start(contentType, additions, path.substring(tpot.path.length));
     } else if (command === 'stop') {
       payloadstr = tpot.stop(contentType);
     } else {
@@ -64,9 +64,9 @@ function handleGet(path: string, headers: Map<string, string>, resp: httpserver.
   let payloadstr: string;
   let status = 200;
   if (path === '/') {
-    payloadstr = pots.map(p => p.info()).join('\n');
+    payloadstr = pots.all().map(p => p.info()).join('\n');
   } else {
-    const tpot = pots.find(p => p.path === path);
+    const tpot = pots.get(path);
     if (!tpot) {
       status = 404;
       payloadstr = 'Sorry, no pot found for '+ path;

@@ -7,10 +7,13 @@ abstract class _Pot {
   constructor(path: string) {
     this.#path = path;
   }
-  abstract start(mediatype: string, additions: string[]): string;
+  abstract start(mediatype: string, additions: string[], subpath?: string): string;
   abstract stop(mediatype: string): string;
   info(): string {
-    return `${this.path}: ${Object.getPrototypeOf(this).constructor.name} @ ${this.status} < [ ${this.additions.join(', ')} ]`;
+    return `${this.path}: ${Object.getPrototypeOf(this).constructor.name} @ ${this.status} < [ ${this.additions.join(', ')} ] < ${this.extrainfo()}`;
+  }
+  extrainfo(): string {
+    return 'N/A';
   }
   #status: 'idle' | 'brewing' = 'idle';
   protected set status(status: 'idle' | 'brewing') {
@@ -64,9 +67,36 @@ export class HtcpcpError extends Error {
 }
 
 export class TeaPot extends _Pot {
-  start(mediatype: string, additions: string[]): string {
+  start(mediatype: string, additions: string[], subpath?: string): string {
     if (mediatype !== 'message/teapot') {
       throw new HtcpcpError(IM_A_TEAPOT_ASCII_ART, 418);
+    } else if ('brewing' === this.status) {
+      throw new HtcpcpError('I\'m already brewing!', 409);
+    }
+    this.#teatype = subpath?.replace(/^\//, '');
+    this.status = 'brewing';
+    this.additions = additions;
+    return this.path + ': Starting brewing...';
+  }
+  stop(mediatype: string): string {
+    if (mediatype !== 'message/teapot') {
+      throw new HtcpcpError(IM_A_TEAPOT_ASCII_ART, 418);
+    }
+    this.status = 'idle';
+    this.additions = [];
+    return this.path + ': Stopped brewing...';
+  }
+  extrainfo() {
+    return this.#teatype || 'N/A';
+  }
+  #teatype?: string;
+}
+
+export class CoffeePot extends _Pot {
+  start(mediatype: string, additions: string[]): string {
+    if (mediatype !== 'message/coffeepot'
+      && mediatype !== 'application/coffee-pot-command') {
+      throw new HtcpcpError('Sorry, I can only brew coffee.', 415);
     } else if ('brewing' === this.status) {
       throw new HtcpcpError('I\'m already brewing!', 409);
     }
@@ -75,8 +105,9 @@ export class TeaPot extends _Pot {
     return this.path + ': Starting brewing...';
   }
   stop(mediatype: string): string {
-    if (mediatype !== 'message/teapot') {
-      throw new HtcpcpError(IM_A_TEAPOT_ASCII_ART, 418);
+    if (mediatype !== 'message/coffeepot'
+      && mediatype !== 'application/coffee-pot-command') {
+      throw new HtcpcpError('Sorry, I can only brew coffee.', 415);
     }
     this.status = 'idle';
     this.additions = [];
@@ -84,27 +115,21 @@ export class TeaPot extends _Pot {
   }
 }
 
-export class CoffeePot extends _Pot {
-  start(mediatype: string, additions: string[]): string {
-    if (mediatype !== 'message/coffeepot'
-      && mediatype !== 'application/coffee-pot-command')
-    {
-      throw new HtcpcpError('Sorry, I can only brew coffee.', 415);
-    } else if ('brewing' === this.status) {
-      throw new HtcpcpError('I\'m already brewing!', 409);
-    }
-    this.status = 'brewing';
-    this.additions = additions;
-    return this.path + ': Starting brewing...';
+export class PotsManager {
+  #potMap = new Map<string, Pot>;
+  add(pot: Pot) {
+    this.#potMap.set(pot.path, pot);
   }
-  stop(mediatype: string): string {
-    if (mediatype !== 'message/coffeepot'
-      && mediatype !== 'application/coffee-pot-command')
-    {
-      throw new HtcpcpError('Sorry, I can only brew coffee.', 415);
-    }
-    this.status = 'idle';
-    this.additions = [];
-    return this.path + ': Stopped brewing...';
+  remove(path: string) {
+    this.#potMap.delete(path);
+  }
+  get(path: string): Pot | undefined {
+    return path ?
+      (this.#potMap.get(path) || this.get(path.replace(/\/[^\/]*?$/, '')))
+      :
+      void 0;
+  }
+  all() {
+    return Array.from(this.#potMap.values());
   }
 }
