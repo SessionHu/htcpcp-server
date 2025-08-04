@@ -67,6 +67,8 @@ export class TeaPot extends _Pot {
   start(mediatype: string, additions: string[]): string {
     if (mediatype !== 'message/teapot') {
       throw new HtcpcpError(IM_A_TEAPOT_ASCII_ART, 418);
+    } else if ('brewing' === this.status) {
+      throw new HtcpcpError('I\'m already brewing!', 409);
     }
     this.status = 'brewing';
     this.additions = additions;
@@ -88,6 +90,8 @@ export class CoffeePot extends _Pot {
       && mediatype !== 'application/coffee-pot-command')
     {
       throw new HtcpcpError('Sorry, I can only brew coffee.', 415);
+    } else if ('brewing' === this.status) {
+      throw new HtcpcpError('I\'m already brewing!', 409);
     }
     this.status = 'brewing';
     this.additions = additions;
