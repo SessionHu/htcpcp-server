@@ -27,6 +27,17 @@ function handleBrew(path: string, headers: Map<string, string>, body: Buffer | u
     resp.writeHeaders();
     resp.writeBodyEnd(payload);
     return;
+  } else if (contentType === 'message/coffeepot' && path === '/') {
+    const potsall = pots.all();
+    const payload = Buffer.from(potsall.map(p => p.info()).join('\n') + '\n');
+    const atns = potsall.map(p => `{"${p.path}"}`).join(', ');
+    resp.writeStatusLine(300);
+    resp.setHeader('alternates', atns);
+    resp.setHeader('content-type', 'text/plain');
+    resp.setHeader('content-length', payload.length.toString());
+    resp.writeHeaders();
+    resp.writeBodyEnd(payload);
+    return;
   }
   let payloadstr: string;
   let status = 200;
