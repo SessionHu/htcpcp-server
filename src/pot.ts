@@ -10,7 +10,7 @@ abstract class _Pot {
   abstract start(mediatype: string, additions: string[]): string;
   abstract stop(mediatype: string): string;
   info(): string {
-    return this.path + ': ' + this.status + ' @ ' + this.additions.join(', ');
+    return `${this.path}: ${Object.getPrototypeOf(this).constructor.name} @ ${this.status} < [ ${this.additions.join(', ')} ]`;
   }
   #status: 'idle' | 'brewing' = 'idle';
   protected set status(status: 'idle' | 'brewing') {
