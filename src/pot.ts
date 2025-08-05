@@ -76,7 +76,7 @@ export class TeaPot extends _Pot {
     this.#teatype = subpath?.replace(/^\//, '');
     this.status = 'brewing';
     this.additions = additions;
-    return this.path + ': Starting brewing...';
+    return log(this.path + ': Starting brewing...')[0];
   }
   stop(mediatype: string): string {
     if (mediatype !== 'message/teapot') {
@@ -84,7 +84,7 @@ export class TeaPot extends _Pot {
     }
     this.status = 'idle';
     this.additions = [];
-    return this.path + ': Stopped brewing...';
+    return log(this.path + ': Stopped brewing...')[0];
   }
   extrainfo() {
     return this.#teatype || 'N/A';
@@ -102,7 +102,7 @@ export class CoffeePot extends _Pot {
     }
     this.status = 'brewing';
     this.additions = additions;
-    return this.path + ': Starting brewing...';
+    return log(this.path + ': Starting brewing...')[0];
   }
   stop(mediatype: string): string {
     if (mediatype !== 'message/coffeepot'
@@ -111,7 +111,7 @@ export class CoffeePot extends _Pot {
     }
     this.status = 'idle';
     this.additions = [];
-    return this.path + ': Stopped brewing...';
+    return log(this.path + ': Stopped brewing...')[0];
   }
 }
 
@@ -132,4 +132,9 @@ export class PotsManager {
   all() {
     return Array.from(this.#potMap.values());
   }
+}
+
+function log<T>(...data: T[]): T[] {
+  console.log(...data);
+  return data;
 }
