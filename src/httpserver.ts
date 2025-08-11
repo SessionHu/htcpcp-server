@@ -5,7 +5,7 @@ import { STATUS_CODES } from 'node:http';
 import * as httptext from './httptext';
 
 const onconnection = async (s: net.Socket, that: HttpServer) => {
-  console.log('Client connected!');
+  // console.log('Client connected!');
 
   s.on('error', (err) => {
     console.error('An error occurred:', err);
@@ -75,9 +75,9 @@ const onconnection = async (s: net.Socket, that: HttpServer) => {
     }
   });
 
-  s.on('end', () => {
-    console.log('Client disconnected.');
-  });
+  // s.on('end', () => {
+  //   console.log('Client disconnected.');
+  // });
 };
 
 interface HttpServerEvents {
@@ -164,7 +164,6 @@ export class HttpResponse {
     if (Number(this.#headers.get('content-length')) !== chunk.length)
       throw new Error('Chunk length does not match Content-Length header');
     this.#s.write(chunk);
-    this.#s.end();
   }
 }
 
