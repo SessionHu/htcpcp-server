@@ -1,12 +1,13 @@
 {
   "devDependencies": {
     "@types/node": "^24.1.0",
+    "esbuild": "^0.25.8",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3"
   },
   "type": "module",
   "scripts": {
     "dev": "tsx watch --clear-screen=false --include 'src/**/*' 'src/index.ts'",
-    "build": "esbuild --bundle src/index.ts --outfile=dist/index.js --format=esm --platform=node --minify --sourcemap"
+    "build": "esbuild --bundle src/index.ts --outfile=dist/index.js --format=esm --platform=node --sourcemap"
   }
 }
