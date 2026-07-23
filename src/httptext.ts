@@ -18,7 +18,7 @@ export function parseRequestLine(reqline: string): RequestLine {
   return { method, requestUri, httpVersion };
 }
 
-const TSPECIALS = new Set(...'()<>@,;:\\"/[]?={}\x20\x09');
+const TSPECIALS = new Set(Array.from('()<>@,;:\\"/[]?={}\x20\x09'));
 function hasTspecials(s: string): boolean {
   for (const c of s) {
     if (TSPECIALS.has(c)) return true;

@@ -11,7 +11,7 @@ const onconnection = async (s: net.Socket, that: HttpServer) => {
     console.error('An error occurred:', err);
     const body = Buffer.from((err as Error).stack || String(err));
     if (!s.writableEnded) {
-      s.write(`HTTP/1.1 400 Bad Request\ncontent-length: ${body.length}\n\n`);
+      s.write(`HTTP/1.1 400 Bad Request\ncontent-length: ${body.length}\r\n`);
       s.write(body);
       s.end();
     }
@@ -164,6 +164,7 @@ export class HttpResponse {
     if (Number(this.#headers.get('content-length')) !== chunk.length)
       throw new Error('Chunk length does not match Content-Length header');
     this.#s.write(chunk);
+    this.#state = 3;
   }
 }
 
