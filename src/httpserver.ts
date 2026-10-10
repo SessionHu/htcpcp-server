@@ -95,8 +95,8 @@ class HttpServer extends EventEmitter {
     });
   }
 
-  public listen(port: number, cb?: () => void): this {
-    this.#sserver.listen(port, cb);
+  public listen(port: number, host: string,  cb?: () => void): this {
+    this.#sserver.listen(port, host, cb);
     return this;
   }
 

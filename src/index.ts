@@ -119,6 +119,7 @@ const server = httpserver.createServer((reql, headers, body, resp) => {
 });
 
 const p = Number(process.argv[2]) || 8000;
-server.listen(p, () => {
-  console.log('Server is running on port ' + p);
+const h = process.argv[3] || '127.0.0.1';
+server.listen(p, h, () => {
+  console.log(`Server is running on ${h} port ${p}`);
 });
