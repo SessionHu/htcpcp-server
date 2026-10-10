@@ -118,6 +118,7 @@ const server = httpserver.createServer((reql, headers, body, resp) => {
   }
 });
 
-server.listen(8000, () => {
-  console.log('Server is running on port 8000');
+const p = Number(process.argv[2]) || 8000;
+server.listen(p, () => {
+  console.log('Server is running on port ' + p);
 });
